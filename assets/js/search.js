@@ -66,9 +66,58 @@ document.addEventListener("keydown", function (event) {
 });
 
 // Update search on each keypress
-input.onkeyup = function (event) {
+input.oninput = function (event) {
   executeQuery(this.value);
 };
+
+
+function handlerHighlight(fuseSearchResult, highlightClassName = 'highlight') {
+  const set = (obj, path, value) => {
+    const pathValue = path.split('.');
+    let i;
+
+    for (i = 0; i < pathValue.length - 1; i++) {
+      obj = obj[pathValue[i]];
+    }
+
+    obj[pathValue[i]] = value;
+  };
+
+  const generateHighlightedText = (inputText, regions = []) => {
+    console.log();
+    let content = '';
+    let nextUnhighlightedRegionStartingIndex = 0;
+
+    regions.forEach(region => {
+      const lastRegionNextIndex = region[1] + 1;
+
+      content += [
+        inputText.substring(nextUnhighlightedRegionStartingIndex, region[0]),
+        `<span class="${highlightClassName}">`,
+        inputText.substring(region[0], lastRegionNextIndex),
+        '</span>',
+      ].join('');
+
+      nextUnhighlightedRegionStartingIndex = lastRegionNextIndex;
+    });
+
+    content += inputText.substring(nextUnhighlightedRegionStartingIndex);
+
+    return content;
+  };
+
+  return fuseSearchResult
+    .filter(({ matches }) => matches && matches.length)
+    .map(res => {
+      const { item, matches } = res
+
+      matches.forEach((match) => {
+        set(res.item, match.key, generateHighlightedText(match.value, match.indices));
+      });
+
+      return res;
+    });
+}
 
 function displaySearch() {
   if (!indexed) {
@@ -114,13 +163,11 @@ function buildIndex() {
     var options = {
       shouldSort: true,
       ignoreLocation: true,
-      threshold: 0.0,
+      threshold: 0.3,
       includeMatches: true,
       keys: [
-        { name: "title", weight: 0.8 },
-        { name: "section", weight: 0.2 },
-        { name: "summary", weight: 0.6 },
-        { name: "content", weight: 0.4 },
+        { name: "title", weight: 0.5 },
+        { name: "content", weight: 0.9 },
       ],
     };
     fuse = new Fuse(data, options);
@@ -131,21 +178,23 @@ function buildIndex() {
 function executeQuery(term) {
   let results = fuse.search(term);
   let resultsHTML = "";
-
+  results = results.slice(0, 10)
   if (results.length > 0) {
     // prettier-ignore
+    results = handlerHighlight(results, highlightClassName = 'text-primary-500 decoration-primary-500 hover:underline hover:underline-offset-2 dark:text-neutral-700')
     resultsHTML = results.map(function (value, key) {
       return `<li class="mb-2">
         <a class="flex items-center px-3 py-2 rounded-md appearance-none bg-neutral-100 dark:bg-neutral-700 focus:bg-primary-100 hover:bg-primary-100 dark:hover:bg-primary-900 dark:focus:bg-primary-900 focus:outline-dotted focus:outline-transparent focus:outline-2" href="${value.item.permalink}" tabindex="0">
           <div class="grow">
             <div class="-mb-1 text-lg font-bold">${value.item.title}</div>
             <div class="text-sm text-neutral-500 dark:text-neutral-400">${value.item.section}${value.item.date == null ? '' : `<span class="px-2 text-primary-500">&middot;</span>${value.item.date}</span>`}</div>
-            <div class="text-sm italic">${value.item.summary}</div>
+            <div class="text-sm">${value.item.content}</div>
           </div>
           <div class="ml-2 ltr:block rtl:hidden text-neutral-500">&rarr;</div>
           <div class="mr-2 ltr:hidden rtl:block text-neutral-500">&larr;</div>
         </a>
       </li>`;
+      // <div class="text-sm italic">${value.item.summary}</div>
     }).join("");
     hasResults = true;
   } else {
