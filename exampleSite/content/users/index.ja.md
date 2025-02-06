@@ -78,5 +78,6 @@ Congoを使用して構築された実際のウェブサイト。
 | [g-snipes.github.io](https://g-snipes.github.io./)                     | Personal site and Music/Tech blog |
 | [aimtune.dev](https://aimtune.dev/)                                    | Personal blog (Turkish/English)   |
 | [blog.ny4.dev](https://blog.ny4.dev)                                   | Personal site and blog (en/zh)    |
+| [Rwhither's Blog](https://blog.sky123.top)                             | Personal site and blog            |
 
 **Congoを使っていますか？** あなたのウェブサイトを加えるために[Pull Request](https://github.com/jpanther/congo/blob/dev/exampleSite/content/users/index.md)を投げてください。
